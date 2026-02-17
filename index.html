@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Kopano Elite · Digital Motshelo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(145deg, #f5f3f0 0%, #e8e4dd 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(217, 119, 6, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(30, 41, 59, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 30px 60px -12px rgba(217, 119, 6, 0.3);
+        }
+
+        .nav-pill {
+            background: rgba(30, 41, 59, 0.05);
+            color: #1E293B;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-pill-active {
+            background: #D97706;
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(217, 119, 6, 0.4);
+        }
+
+        .risk-low { background: #166534; }
+        .risk-medium { background: #D97706; }
+        .risk-high { background: #b91c1c; }
+
+        .spending-bar-bg {
+            background: rgba(30, 41, 59, 0.1);
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .spending-bar-fill {
+            background: linear-gradient(90deg, #D97706, #f59e0b);
+            height: 100%;
+            border-radius: 999px;
+        }
+        .spending-bar-savings {
+            background: #166534;
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .pulse-button {
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(217, 119, 6, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+        }
+
+        .success-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .success-circle {
+            background: #166534;
+            width: 120px;
+            height: 120px;
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 20px 40px rgba(22, 101, 52, 0.4);
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .ripple {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 100px;
+            background: rgba(22, 101, 52, 0.3);
+            animation: ripple 1.5s infinite;
+        }
+        @keyframes ripple {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #D97706;
+            position: absolute;
+            animation: confetti 3s ease-in-out infinite;
+        }
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .masked-id {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .tab-content {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0.5; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="p-4 max-w-lg mx-auto min-h-screen">
+
+<div id="root" class="w-full"></div>
+
+<script type="text/babel">
+    const MEMBERS_DATA = [
+        {
+            id: 1,
+            fullName: "Tshegofatso Dlamini",
+            idNumber: "950101 5084 089",
+            creditScore: 720,
+            outstandingAmount: 1200,
+            totalContributions: 4800,
+            role: "Chairperson",
+            phone: "+27 76 123 4567",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "paid"]
+        },
+        {
+            id: 2,
+            fullName: "Boitumelo Molefe",
+            idNumber: "920615 1234 567",
+            creditScore: 580,
+            outstandingAmount: 3400,
+            totalContributions: 3200,
+            role: "Secretary",
+            phone: "+27 83 987 6543",
+            consistencyHistory: ["paid", "late", "paid", "paid", "late", "pending"]
+        },
+        {
+            id: 3,
+            fullName: "Bokamoso Ndlovu",
+            idNumber: "880322 7890 123",
+            creditScore: 650,
+            outstandingAmount: 2100,
+            totalContributions: 4500,
+            role: "Treasurer",
+            phone: "+27 72 456 7890",
+            consistencyHistory: ["paid", "paid", "paid", "late", "paid", "paid"]
+        },
+        {
+            id: 4,
+            fullName: "Dimakatso Khumalo",
+            idNumber: "901112 3456 789",
+            creditScore: 810,
+            outstandingAmount: 0,
+            totalContributions: 6200,
+            role: "Member",
+            phone: "+27 64 321 8765",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "paid"]
+        },
+        {
+            id: 5,
+            fullName: "Rachel Mbeki",
+            idNumber: "940505 2345 678",
+            creditScore: 490,
+            outstandingAmount: 4500,
+            totalContributions: 2100,
+            role: "Member",
+            phone: "+27 71 234 5678",
+            consistencyHistory: ["late", "late", "pending", "pending", "late", "pending"]
+        },
+        {
+            id: 6,
+            fullName: "Selina Zulu",
+            idNumber: "870718 9012 345",
+            creditScore: 690,
+            outstandingAmount: 800,
+            totalContributions: 3900,
+            role: "Member",
+            phone: "+27 78 345 6789",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "late"]
+        },
+        {
+            id: 7,
+            fullName: "Charles Peters",
+            idNumber: "910203 4567 890",
+            creditScore: 550,
+            outstandingAmount: 2800,
+            totalContributions: 2800,
+            role: "Member",
+            phone: "+27 73 456 7890",
+            consistencyHistory: ["paid", "late", "paid", "paid", "late", "paid"]
+        },
+        {
+            id: 8,
+            fullName: "Boikanyo Modise",
+            idNumber: "930814 5678 901",
+            creditScore: 710,
+            outstandingAmount: 1500,
+            totalContributions: 5100,
+            role: "Member",
+            phone: "+27 79 567 8901",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "paid"]
+        },
+        {
+            id: 9,
+            fullName: "Boikarabelo Tladi",
+            idNumber: "890709 6789 012",
+            creditScore: 630,
+            outstandingAmount: 1900,
+            totalContributions: 3500,
+            role: "Member",
+            phone: "+27 74 678 9012",
+            consistencyHistory: ["paid", "paid", "paid", "late", "paid", "paid"]
+        },
+        {
+            id: 10,
+            fullName: "Thakgatso Moloi",
+            idNumber: "960112 7890 123",
+            creditScore: 670,
+            outstandingAmount: 1100,
+            totalContributions: 4100,
+            role: "Member",
+            phone: "+27 82 789 0123",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "late", "paid"]
+        },
+        {
+            id: 11,
+            fullName: "Jack Mofokeng",
+            idNumber: "850426 8901 234",
+            creditScore: 520,
+            outstandingAmount: 3900,
+            totalContributions: 1800,
+            role: "Member",
+            phone: "+27 84 890 1234",
+            consistencyHistory: ["late", "pending", "late", "pending", "late", "pending"]
+        },
+        {
+            id: 12,
+            fullName: "Nancy Masuku",
+            idNumber: "920903 9012 345",
+            creditScore: 740,
+            outstandingAmount: 700,
+            totalContributions: 5600,
+            role: "Member",
+            phone: "+27 81 901 2345",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "paid"]
+        },
+        {
+            id: 13,
+            fullName: "Bonolo Mthembu",
+            idNumber: "951210 0123 456",
+            creditScore: 680,
+            outstandingAmount: 1300,
+            totalContributions: 4300,
+            role: "Member",
+            phone: "+27 76 012 3456",
+            consistencyHistory: ["paid", "paid", "paid", "paid", "paid", "late"]
+        }
+    ];
+
+    const GROUP_SETTINGS = {
+        name: "Kopano Savings Circle",
+        totalGoal: 50000,
+        monthlyTarget: 3000,
+        payoutRules: "Monthly rotation based on joining date"
+    };
+
+    const formatZAR = (amount) => `R${amount.toLocaleString('en-ZA')}`;
+
+    const maskID = (idNumber) => {
+        const parts = idNumber.split(' ');
+        if (parts.length >= 2) {
+            return `${parts[0]} **** ${parts[2]}`;
+        }
+        return "**** **** ****";
+    };
+
+    const calculateRiskScore = (outstanding, totalContributions, creditScore, history) => {
+        const debtRatio = outstanding / (totalContributions || 1);
+        const debtScore = Math.min(100, debtRatio * 100);
+        const creditScoreNormalized = Math.max(0, Math.min(100, (800 - creditScore) / 8));
+        const lateCount = history.filter(h => h === 'late' || h === 'pending').length;
+        const historyScore = (lateCount / history.length) * 100;
+        const rawRisk = (debtScore * 0.4) + (creditScoreNormalized * 0.3) + (historyScore * 0.3);
+        return Math.min(100, Math.max(0, Math.round(rawRisk)));
+    };
+
+    const getRiskLevel = (riskScore) => {
+        if (riskScore < 30) return { level: "Low Risk", color: "risk-low", icon: "fa-shield-check" };
+        if (riskScore < 60) return { level: "Medium Risk", color: "risk-medium", icon: "fa-shield-exclamation" };
+        return { level: "High Risk", color: "risk-high", icon: "fa-shield-xmark" };
+    };
+
+    function KopanoElite() {
+        const [currentTab, setCurrentTab] = React.useState("dashboard");
+        const [showSuccess, setShowSuccess] = React.useState(false);
+        const [isProcessing, setIsProcessing] = React.useState(false);
+        const [totalSavings, setTotalSavings] = React.useState(38500);
+
+        const playKaChing = () => {
+            const audio = new Audio();
+            audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgICAf39/f3+AgICAf39/f3+AgICAf39/f3+AgICAf39/f3+AgICAf39/f3+AgICAf39/f3+AgICAf39/f3+AgIA=';
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        };
+
+        const handleReleaseFunds = () => {
+            setIsProcessing(true);
+            setTimeout(() => {
+                setIsProcessing(false);
+                setShowSuccess(true);
+                playKaChing();
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 4000);
+            }, 3000);
+        };
+
+        const Confetti = () => {
+            const pieces = Array.from({ length: 50 }, (_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                size: Math.random() * 10 + 5,
+                color: ['#D97706', '#166534', '#1E293B', '#f59e0b'][Math.floor(Math.random() * 4)],
+                delay: Math.random() * 2,
+                duration: Math.random() * 2 + 2
+            }));
+
+            return (
+                <>
+                    {pieces.map(piece => (
+                        <div
+                            key={piece.id}
+                            className="confetti"
+                            style={{
+                                left: `${piece.left}%`,
+                                width: `${piece.size}px`,
+                                height: `${piece.size}px`,
+                                background: piece.color,
+                                animationDelay: `${piece.delay}s`,
+                                animationDuration: `${piece.duration}s`
+                            }}
+                        />
+                    ))}
+                </>
+            );
+        };
+
+        const DashboardTab = () => {
+            const progressPercent = Math.min(100, (totalSavings / GROUP_SETTINGS.totalGoal) * 100);
+
+            return (
+                <div className="space-y-5 tab-content">
+                    <div className="glass-card rounded-3xl p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-[#1E293B]/60">Welcome back to</p>
+                                <h1 className="text-3xl font-bold text-[#1E293B]">Kopano<span className="text-[#D97706]">.</span></h1>
+                            </div>
+                            <div className="w-14 h-14 rounded-2xl bg-[#D97706]/10 flex items-center justify-center">
+                                <i className="fas fa-hands-helping text-2xl text-[#D97706]"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card rounded-3xl p-6">
+                        <p className="text-sm text-[#1E293B]/60 mb-1">Total Group Savings</p>
+                        <div className="flex items-end justify-between mb-4">
+                            <span className="text-4xl font-bold text-[#1E293B]">{formatZAR(totalSavings)}</span>
+                            <span className="text-sm text-[#166534] bg-[#166534]/10 px-3 py-1 rounded-full">
+                +12% this month
+              </span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span>Goal: {formatZAR(GROUP_SETTINGS.totalGoal)}</span>
+                                <span className="font-semibold text-[#D97706]">{Math.round(progressPercent)}%</span>
+                            </div>
+                            <div className="w-full h-3 bg-[#1E293B]/10 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-[#D97706] to-[#f59e0b] rounded-full transition-all duration-500"
+                                    style={{ width: `${progressPercent}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card rounded-3xl p-6 border-2 border-[#D97706]/20">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-[#1E293B] flex items-center gap-2">
+                                <i className="fas fa-vault text-[#D97706]"></i>
+                                Vault Access
+                            </h3>
+                            <span className="text-xs bg-[#1E293B] text-white px-3 py-1 rounded-full">
+                Multi-sig required
+              </span>
+                        </div>
+
+                        <button
+                            onClick={handleReleaseFunds}
+                            disabled={isProcessing}
+                            className="w-full py-5 rounded-2xl bg-gradient-to-r from-[#D97706] to-[#f59e0b] text-white font-bold text-xl shadow-lg pulse-button disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-hand-holding-heart"></i>
+                                    Release Funds
+                                </>
+                            )}
+                        </button>
+
+                        <p className="text-xs text-center text-[#1E293B]/50 mt-3">
+                            Next payout: 25 March 2026 • R5,000
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="glass-card rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-bold text-[#1E293B]">13</p>
+                            <p className="text-xs text-[#1E293B]/60">Members</p>
+                        </div>
+                        <div className="glass-card rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-bold text-[#166534]">8</p>
+                            <p className="text-xs text-[#1E293B]/60">Paid this month</p>
+                        </div>
+                        <div className="glass-card rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-bold text-[#D97706]">5</p>
+                            <p className="text-xs text-[#1E293B]/60">Pending</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const MembersTab = () => (
+            <div className="space-y-4 tab-content">
+                <h2 className="text-xl font-bold text-[#1E293B] flex items-center gap-2">
+                    <i className="fas fa-users text-[#D97706]"></i>
+                    Member Profiles
+                </h2>
+
+                <div className="space-y-4">
+                    {MEMBERS_DATA.map(member => {
+                        const riskScore = calculateRiskScore(
+                            member.outstandingAmount,
+                            member.totalContributions,
+                            member.creditScore,
+                            member.consistencyHistory
+                        );
+                        const risk = getRiskLevel(riskScore);
+                        const basicNeeds = member.totalContributions * 0.6;
+                        const savings = member.totalContributions * 0.4;
+
+                        return (
+                            <div key={member.id} className="glass-card rounded-3xl p-5 hover:shadow-xl transition-all">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1E293B] to-[#2d3a4f] text-white flex items-center justify-center text-xl font-bold shadow-lg">
+                                            {member.fullName.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-lg text-[#1E293B]">{member.fullName}</h3>
+                                            <p className="text-sm text-[#D97706] font-medium">{member.role}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className={`${risk.color} text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1`}>
+                                        <i className={`fas ${risk.icon}`}></i>
+                                        <span>{risk.level}</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-[#1E293B]/5 rounded-xl p-3 mb-3">
+                                    <p className="text-xs text-[#1E293B]/60 mb-1">ID Number (POPIA Compliant)</p>
+                                    <p className="masked-id text-sm font-mono">{maskID(member.idNumber)}</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="bg-[#1E293B]/5 rounded-xl p-3">
+                                        <p className="text-xs text-[#1E293B]/60">Credit Score</p>
+                                        <p className="text-lg font-bold text-[#1E293B]">{member.creditScore}</p>
+                                    </div>
+                                    <div className="bg-[#1E293B]/5 rounded-xl p-3">
+                                        <p className="text-xs text-[#1E293B]/60">Outstanding</p>
+                                        <p className="text-lg font-bold text-[#D97706]">{formatZAR(member.outstandingAmount)}</p>
+                                    </div>
+                                </div>
+
+                                <div className="mb-2">
+                                    <p className="text-xs text-[#1E293B]/60 mb-2">Spending Breakdown</p>
+                                    <div className="spending-bar-bg">
+                                        <div className="flex h-full" style={{ width: '100%' }}>
+                                            <div
+                                                className="spending-bar-fill"
+                                                style={{ width: `${(basicNeeds / member.totalContributions) * 100}%` }}
+                                                title="Basic Needs"
+                                            ></div>
+                                            <div
+                                                className="spending-bar-savings"
+                                                style={{ width: `${(savings / member.totalContributions) * 100}%` }}
+                                                title="Savings"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between text-xs mt-1">
+                                        <span className="text-[#D97706]">Needs {formatZAR(Math.round(basicNeeds))}</span>
+                                        <span className="text-[#166534]">Savings {formatZAR(Math.round(savings))}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#1E293B]/10">
+                                    <i className="fas fa-phone-alt text-[#166534] text-xs"></i>
+                                    <span className="text-sm text-[#1E293B]/70">{member.phone}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+
+        const RiskEngineTab = () => {
+            const totalOutstanding = MEMBERS_DATA.reduce((sum, m) => sum + m.outstandingAmount, 0);
+            const totalContributions = MEMBERS_DATA.reduce((sum, m) => sum + m.totalContributions, 0);
+            const avgCreditScore = Math.round(MEMBERS_DATA.reduce((sum, m) => sum + m.creditScore, 0) / MEMBERS_DATA.length);
+
+            const riskDistribution = MEMBERS_DATA.reduce((acc, m) => {
+                const score = calculateRiskScore(m.outstandingAmount, m.totalContributions, m.creditScore, m.consistencyHistory);
+                if (score < 30) acc.low++;
+                else if (score < 60) acc.medium++;
+                else acc.high++;
+                return acc;
+            }, { low: 0, medium: 0, high: 0 });
+
+            return (
+                <div className="space-y-4 tab-content">
+                    <h2 className="text-xl font-bold text-[#1E293B] flex items-center gap-2">
+                        <i className="fas fa-shield-halved text-[#D97706]"></i>
+                        Risk Engine Analytics
+                    </h2>
+
+                    <div className="glass-card rounded-3xl p-6">
+                        <h3 className="font-semibold text-[#1E293B] mb-4">Portfolio Health</h3>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="text-center">
+                                <p className="text-3xl font-bold text-[#1E293B]">{formatZAR(totalOutstanding)}</p>
+                                <p className="text-xs text-[#1E293B]/60">Total Outstanding</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold text-[#1E293B]">{avgCreditScore}</p>
+                                <p className="text-xs text-[#1E293B]/60">Avg Credit Score</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full risk-low"></div>
+                                <span className="text-sm flex-1">Low Risk</span>
+                                <span className="font-bold">{riskDistribution.low} members</span>
+                            </div>
+                            <div className="w-full h-2 bg-[#1E293B]/10 rounded-full overflow-hidden">
+                                <div className="risk-low h-full" style={{ width: `${(riskDistribution.low / MEMBERS_DATA.length) * 100}%` }}></div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full risk-medium"></div>
+                                <span className="text-sm flex-1">Medium Risk</span>
+                                <span className="font-bold">{riskDistribution.medium} members</span>
+                            </div>
+                            <div className="w-full h-2 bg-[#1E293B]/10 rounded-full overflow-hidden">
+                                <div className="risk-medium h-full" style={{ width: `${(riskDistribution.medium / MEMBERS_DATA.length) * 100}%` }}></div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full risk-high"></div>
+                                <span className="text-sm flex-1">High Risk</span>
+                                <span className="font-bold">{riskDistribution.high} members</span>
+                            </div>
+                            <div className="w-full h-2 bg-[#1E293B]/10 rounded-full overflow-hidden">
+                                <div className="risk-high h-full" style={{ width: `${(riskDistribution.high / MEMBERS_DATA.length) * 100}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card rounded-3xl p-6">
+                        <h3 className="font-semibold text-[#1E293B] mb-2">Risk Algorithm</h3>
+                        <p className="text-sm text-[#1E293B]/70 mb-3">
+                            Weighted calculation based on:
+                        </p>
+                        <ul className="space-y-2 text-sm">
+                            <li className="flex items-center gap-2">
+                                <span className="w-16 text-[#D97706] font-bold">40%</span>
+                                <span>Debt-to-Contribution ratio</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <span className="w-16 text-[#D97706] font-bold">30%</span>
+                                <span>Credit Score (inverted)</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                                <span className="w-16 text-[#D97706] font-bold">30%</span>
+                                <span>Payment History consistency</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {riskDistribution.high > 0 && (
+                        <div className="glass-card rounded-3xl p-6 border-2 border-red-200">
+                            <div className="flex items-center gap-3 text-red-600 mb-2">
+                                <i className="fas fa-exclamation-triangle"></i>
+                                <h3 className="font-bold">High Risk Alert</h3>
+                            </div>
+                            <p className="text-sm">
+                                {riskDistribution.high} member(s) require immediate attention.
+                                Consider contacting them to arrange payment plans.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SettingsTab = () => (
+            <div className="space-y-4 tab-content">
+                <h2 className="text-xl font-bold text-[#1E293B] flex items-center gap-2">
+                    <i className="fas fa-gear text-[#D97706]"></i>
+                    Group Settings
+                </h2>
+
+                <div className="glass-card rounded-3xl p-6">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-[#1E293B]/70 mb-2">
+                                Group Name
+                            </label>
+                            <input
+                                type="text"
+                                defaultValue={GROUP_SETTINGS.name}
+                                className="w-full p-4 rounded-2xl border border-[#1E293B]/10 bg-white focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-[#1E293B]/70 mb-2">
+                                Monthly Target (R)
+                            </label>
+                            <input
+                                type="number"
+                                defaultValue={GROUP_SETTINGS.monthlyTarget}
+                                className="w-full p-4 rounded-2xl border border-[#1E293B]/10 bg-white focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-[#1E293B]/70 mb-2">
+                                Total Goal (R)
+                            </label>
+                            <input
+                                type="number"
+                                defaultValue={GROUP_SETTINGS.totalGoal}
+                                className="w-full p-4 rounded-2xl border border-[#1E293B]/10 bg-white focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-[#1E293B]/70 mb-2">
+                                Payout Rules
+                            </label>
+                            <textarea
+                                defaultValue={GROUP_SETTINGS.payoutRules}
+                                rows="3"
+                                className="w-full p-4 rounded-2xl border border-[#1E293B]/10 bg-white focus:border-[#D97706] focus:ring-1 focus:ring-[#D97706] outline-none"
+                            />
+                        </div>
+
+                        <button className="w-full py-4 rounded-2xl bg-[#1E293B] text-white font-bold hover:bg-[#2d3a4f] transition-all">
+                            <i className="fas fa-save mr-2"></i>
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-3xl p-6">
+                    <h3 className="font-semibold text-[#1E293B] mb-3">Compliance & Security</h3>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-sm">
+                            <i className="fas fa-check-circle text-[#166534]"></i>
+                            <span>POPIA Compliant - All ID numbers masked</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                            <i className="fas fa-check-circle text-[#166534]"></i>
+                            <span>Registered Credit Provider</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                            <i className="fas fa-check-circle text-[#166534]"></i>
+                            <span>256-bit SSL Encryption</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        return (
+            <div className="space-y-5 pb-10 relative">
+                {showSuccess && (
+                    <div className="success-overlay">
+                        <Confetti />
+                        <div className="relative flex flex-col items-center">
+                            <div className="ripple"></div>
+                            <div className="success-circle">
+                                <i className="fas fa-check text-white text-5xl"></i>
+                            </div>
+                            <div className="text-center mt-8 text-white">
+                                <p className="text-2xl font-bold mb-2">R5,000 Payout Successful</p>
+                                <p className="text-white/80">Sent via Instant EFT</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="sticky top-0 z-50 glass-card rounded-2xl p-2 flex justify-between gap-1 shadow-lg">
+                    {[
+                        { id: "dashboard", icon: "fas fa-chart-pie", label: "Vault" },
+                        { id: "members", icon: "fas fa-users", label: "Members" },
+                        { id: "risk", icon: "fas fa-shield", label: "Risk" },
+                        { id: "settings", icon: "fas fa-sliders", label: "Settings" }
+                    ].map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setCurrentTab(tab.id)}
+                            className={`flex-1 flex flex-col items-center py-3 px-1 rounded-xl transition-all
+                ${currentTab === tab.id ? 'nav-pill-active' : 'nav-pill hover:bg-[#1E293B]/20'}`}
+                        >
+                            <i className={`${tab.icon} ${currentTab === tab.id ? 'text-white' : 'text-[#1E293B]'} text-lg`}></i>
+                            <span className={`text-xs mt-1 font-medium ${currentTab === tab.id ? 'text-white' : 'text-[#1E293B]'}`}>
+                {tab.label}
+              </span>
+                        </button>
+                    ))}
+                </div>
+
+                {currentTab === "dashboard" && <DashboardTab />}
+                {currentTab === "members" && <MembersTab />}
+                {currentTab === "risk" && <RiskEngineTab />}
+                {currentTab === "settings" && <SettingsTab />}
+
+                <div className="glass-card rounded-2xl p-4 text-center mt-8">
+                    <p className="text-xs text-[#1E293B]/60">
+                        © 2026 Kopano Digital Finance. Registered Credit Provider. POPIA Compliant.
+                    </p>
+                    <div className="flex justify-center gap-4 mt-2 text-xs text-[#1E293B]/40">
+                        <span>NCRCP 12345</span>
+                        <span>•</span>
+                        <span>PA 6789</span>
+                        <span>•</span>
+                        <span>v2.1.0</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<KopanoElite />);
+</script>
+</body>
+</html>
