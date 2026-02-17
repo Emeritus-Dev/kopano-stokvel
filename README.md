@@ -1,2 +1,1 @@
-# kopano-stokvel
-Digital Stokvel management platform with risk assessment and POPIA compliance
+A high-fidelity Fintech prototype designed to digitize South African Motshelos (Stokvels) using a custom risk-assessment engine and POPIA-compliant data masking.
